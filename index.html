@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Vulpes Tycoon</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff9f4d">
+  <!-- Firebase SDK (optional - will work in demo mode without) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <style>
+    /* Inline critical styles to ensure fox displays properly */
+    .fox-avatar {
+      background: radial-gradient(circle at 30% 20%, #ff8c42, #d45d2e);
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      margin: 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 15px 0 #8b3c1c, 0 20px 30px #00000080;
+      border: 5px solid #ff9f4d;
+      cursor: pointer;
+      transition: all 0.1s;
+      position: relative;
+      font-size: 120px;
+      line-height: 1;
+      color: #ffd966;
+      text-shadow: 3px 3px 0 #b94e0e;
+    }
+    .fox-image {
+      font-size: 140px;
+      filter: drop-shadow(0 10px 5px #00000066);
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-screen">
+      <h1>🦊 Vulpes Tycoon</h1>
+      <div class="sub">nine lives · infinite prestige</div>
+      
+      <!-- Toggle between Login and Signup -->
+      <div class="auth-toggle">
+        <button class="auth-toggle-btn active" id="showLoginBtn">LOGIN</button>
+        <button class="auth-toggle-btn" id="showSignupBtn">SIGN UP</button>
+      </div>
+      
+      <!-- LOGIN FORM -->
+      <div id="loginForm" class="auth-form">
+        <input type="email" id="loginEmail" class="login-input" placeholder="email" autocomplete="off" value="test@test.com">
+        <input type="password" id="loginPassword" class="login-input" placeholder="password" autocomplete="off" value="123456">
+        <button class="login-btn" id="loginBtn">▶ LOGIN</button>
+        <div id="loginError" class="error-message"></div>
+      </div>
+      
+      <!-- SIGNUP FORM -->
+<div id="signupForm" class="auth-form hidden">
+  <input type="text" id="signupUsername" class="login-input" placeholder="username" autocomplete="off">
+  <input type="email" id="signupEmail" class="login-input" placeholder="email" autocomplete="off">
+  <input type="password" id="signupPassword" class="login-input" placeholder="password" autocomplete="off">
+  <input type="password" id="signupConfirmPassword" class="login-input" placeholder="confirm password" autocomplete="off">
+  <!-- ADD THIS LINE: -->
+  <input type="text" id="signupReferral" class="login-input" placeholder="referral code (optional)" autocomplete="off">
+  <button class="login-btn" id="signupBtn">▶ CREATE ACCOUNT</button>
+  <div id="signupError" class="error-message"></div>
+</div>
+      
+      <div class="demo-note">⚡ your data will be safe.</div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp" class="main-app hidden">
+      <!-- top bar -->
+      <div class="top-bar">
+        <div class="user-greeting" id="displayUsername">Loading...</div>
+        <div class="coin-balance">
+          <span class="coin-icon">🦊</span>
+          <span class="balance-amount" id="coinDisplay">1000</span>
+        </div>
+        <div class="prestige-badge" id="prestigeBadge">🦊 1</div>
+      </div>
+
+      <!-- FLOATING NUMBERS CONTAINER -->
+      <div id="floatingNumbers"></div>
+
+      <!-- content area -->
+      <div class="content-area" id="contentArea">
+        <!-- MAIN FOX PANEL -->
+        <div id="panelFox" class="tab-panel active-panel">
+          <div class="fox-container">
+            <div class="fox-avatar" id="tapFox">
+              <img src="images/rookie-fox.png" id="foxEmoji" class="fox-image" alt="Rookie Fox">
+              <div class="fox-glasses" id="foxGlasses"></div>
+              <div class="fox-hat" id="foxHat"></div>
+              <div class="fox-cape" id="foxCape"></div>
+            </div>
+            
+            <div class="tap-energy">
+              <span>⚡ energy</span>
+              <span id="energyValue">500/500</span>
+            </div>
+            <div class="energy-bar-bg">
+              <div class="energy-fill" id="energyFill" style="width: 100%"></div>
+            </div>
+            
+            <!-- Level Progress Bar -->
+            <div class="level-progress">
+              <span>🦊 Progress to next level</span>
+              <span id="levelProgressText">0/1000</span>
+            </div>
+            <div class="level-bar-bg">
+              <div class="level-bar-fill" id="levelFill" style="width: 0%"></div>
+            </div>
+            
+            <!-- LUCKY HUNT MINI-GAME -->
+            <div class="lucky-hunt hidden" id="luckyHunt">
+              <div class="lucky-title">🦊 LUCKY FOX 🦊</div>
+              <div class="lucky-timer" id="luckyTimer">10s</div>
+              <div class="lucky-multiplier" id="luckyMultiplier">10x</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PONDS PANEL (Hunting Grounds) -->
+        <div id="panelPonds" class="tab-panel">
+          <div class="tap-header">🎣 AUTO-FISHING PONDS</div>
+          
+          <div class="ground-card locked" id="ground1Card">
+            <div class="ground-info">
+              <h3>🌲 FOREST GROUNDS</h3>
+              <p>lvl <span id="groundLvl1">1</span> · <span id="groundProfit1">5</span>/cast</p>
+            </div>
+            <div class="ground-price" id="unlockPrice1">🔒 1K</div>
+            <button class="ground-btn" id="ground1" data-ground="forest">🔒</button>
+          </div>
+          
+          <div class="ground-card locked" id="ground2Card">
+            <div class="ground-info">
+              <h3>⛰️ MOUNTAIN DEN</h3>
+              <p>lvl <span id="groundLvl2">1</span> · <span id="groundProfit2">8</span>/cast</p>
+            </div>
+            <div class="ground-price" id="unlockPrice2">🔒 5K</div>
+            <button class="ground-btn" id="ground2" data-ground="mountain">🔒</button>
+          </div>
+          
+          <div class="ground-card locked" id="ground3Card">
+            <div class="ground-info">
+              <h3>🏞️ VALLEY TERRITORY</h3>
+              <p>lvl <span id="groundLvl3">1</span> · <span id="groundProfit3">12</span>/cast</p>
+            </div>
+            <div class="ground-price" id="unlockPrice3">🔒 10K</div>
+            <button class="ground-btn" id="ground3" data-ground="valley">🔒</button>
+          </div>
+
+          <!-- UPGRADE SECTION -->
+          <div class="upgrade-section">
+            <div class="tap-header">⬆️ UPGRADE GROUNDS</div>
+            <div class="upgrade-grid">
+              <div class="upgrade-item">
+                <span>🌲 Forest</span>
+                <button class="upgrade-btn" id="upgradeForestBtn">Upgrade (500)</button>
+              </div>
+              <div class="upgrade-item">
+                <span>⛰️ Mountain</span>
+                <button class="upgrade-btn" id="upgradeMountainBtn">Upgrade (1K)</button>
+              </div>
+              <div class="upgrade-item">
+                <span>🏞️ Valley</span>
+                <button class="upgrade-btn" id="upgradeValleyBtn">Upgrade (2K)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHOP PANEL -->
+        <div id="panelShop" class="tab-panel">
+          <div class="tap-header">🦊 FOX CUSTOMIZATION</div>
+          
+          <div class="shop-item" id="buyGlasses">
+            <div class="shop-info">
+              <span class="shop-emoji">👓</span>
+              <span>Cool Glasses</span>
+              <span class="shop-effect">+5% mining</span>
+            </div>
+            <button class="shop-btn" id="glassesBtn" data-item="glasses">5K 🦊</button>
+          </div>
+          
+          <div class="shop-item" id="buyHat">
+            <div class="shop-info">
+              <span class="shop-emoji">🧢</span>
+              <span>Fisherman Hat</span>
+              <span class="shop-effect">+10% lucky</span>
+            </div>
+            <button class="shop-btn" id="hatBtn" data-item="hat">10K 🦊</button>
+          </div>
+          
+          <div class="shop-item" id="buyCape">
+            <div class="shop-info">
+              <span class="shop-emoji">👑</span>
+              <span>Royal Cape</span>
+              <span class="shop-effect">+20% all</span>
+            </div>
+            <button class="shop-btn" id="capeBtn" data-item="cape">25K 🦊</button>
+          </div>
+        </div>
+
+        <!-- PRESTIGE PANEL (Nine Lives) -->
+        <div id="panelPrestige" class="tab-panel">
+          <div class="prestige-card">
+            <h2>🦊 NINE LIVES</h2>
+            <div class="prestige-info">
+              <p>Lives: <span id="prestigeLives">0</span>/9</p>
+              <p>Multiplier: <span id="prestigeMultiplier">1x</span></p>
+              <p>Next: <span id="nextPrestige">100K</span></p>
+            </div>
+            <div class="prestige-progress">
+              <div class="progress-bar" id="prestigeProgress" style="width: 0%"></div>
+            </div>
+            <button class="prestige-btn" id="prestigeBtn">🌟 PRESTIGE</button>
+            <p class="prestige-warning">⚠️ Prestige resets level progress!</p>
+          </div>
+        </div>
+
+        <!-- CASHOUT & AIRDROP PANEL (NEW) -->
+        <div id="panelCashout" class="tab-panel">
+          <div class="tap-header">💰 CASHOUT & AIRDROP</div>
+          
+          <!-- Balance Card -->
+          <div class="cashout-balance-card">
+            <div class="balance-label">Your Balance</div>
+            <div class="balance-amount-large" id="cashoutBalance">1,000 🦊</div>
+            <div class="balance-usd" id="usdValue">≈ $0.00 USD</div>
+          </div>
+
+          <!-- Airdrop Section -->
+          <div class="airdrop-section">
+            <h3>🎁 ACTIVE AIRDROPS</h3>
+            
+            <div class="airdrop-card" id="airdrop1">
+              <div class="airdrop-icon">🪂</div>
+              <div class="airdrop-info">
+                <div class="airdrop-title">Welcome Airdrop</div>
+                <div class="airdrop-desc">Claim 100 🦊 free!</div>
+                <div class="airdrop-timer" id="airdropTimer1">Expires in: 23:59:59</div>
+              </div>
+              <button class="airdrop-claim-btn" id="claimAirdrop1">CLAIM</button>
+            </div>
+
+            <div class="airdrop-card" id="airdrop2">
+              <div class="airdrop-icon">🎯</div>
+              <div class="airdrop-info">
+                <div class="airdrop-title">Daily Bonus Airdrop</div>
+                <div class="airdrop-desc">Login streak bonus</div>
+                <div class="airdrop-requirement">Requires: 3 day streak</div>
+              </div>
+              <button class="airdrop-claim-btn" id="claimAirdrop2">CLAIM</button>
+            </div>
+
+            <div class="airdrop-card" id="airdrop3">
+              <div class="airdrop-icon">🚀</div>
+              <div class="airdrop-info">
+                <div class="airdrop-title">Mega Airdrop</div>
+                <div class="airdrop-desc">10,000 🦊 for top hunters!</div>
+                <div class="airdrop-requirement">Requires: 100K total earned</div>
+              </div>
+              <button class="airdrop-claim-btn" id="claimAirdrop3">CLAIM</button>
+            </div>
+          </div>
+
+          <!-- Withdrawal Section -->
+          <div class="withdrawal-section">
+            <h3>💸 WITHDRAW FUNDS</h3>
+            
+            <div class="withdrawal-card">
+              <div class="withdrawal-info">
+                <div class="min-withdraw">Min. withdrawal: 10,000 🦊</div>
+                <div class="withdrawal-fee">Fee: 5%</div>
+              </div>
+              
+              <div class="withdrawal-input-group">
+                <input type="number" id="withdrawAmount" class="withdrawal-input" placeholder="Enter amount" min="10000" step="1000">
+                <select id="withdrawMethod" class="withdrawal-select">
+                  <option value="ton">TON Wallet</option>
+                  <option value="usdt">USDT (TRC20)</option>
+                  <option value="paypal">PayPal</option>
+                </select>
+              </div>
+
+              <div class="withdrawal-address-group">
+                <input type="text" id="withdrawAddress" class="withdrawal-input" placeholder="Enter wallet address / email">
+              </div>
+
+              <div class="withdrawal-summary">
+                <span>You will receive:</span>
+                <span id="receiveAmount">0 🦊</span>
+              </div>
+
+              <button class="withdrawal-btn" id="withdrawBtn">💸 WITHDRAW</button>
+              <div id="withdrawalError" class="error-message"></div>
+            </div>
+
+            <!-- Withdrawal History -->
+            <div class="withdrawal-history">
+              <h4>Recent Withdrawals</h4>
+              <div id="withdrawalList">
+                <div class="history-item">No withdrawals yet</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Referral Section -->
+          <div class="referral-section">
+            <h3>🔗 REFERRAL PROGRAM</h3>
+            <div class="referral-card">
+              <p>Invite friends and earn 10% of their earnings forever!</p>
+              <div class="referral-code" id="referralCode">Loading...</div>
+              <button class="referral-copy-btn" id="copyReferral">📋 COPY CODE</button>
+              <div class="referral-stats">
+                <span>Referrals: <span id="referralCount">0</span></span>
+                <span>Earned: <span id="referralEarned">0 🦊</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LEADERBOARD PANEL -->
+        <div id="panelLeaderboard" class="tab-panel">
+          <div class="tap-header">🏆 TOP FOXES</div>
+          <div class="leaderboard-list" id="leaderboardList">
+            <div class="leaderboard-item">Loading leaderboard...</div>
+          </div>
+          <div class="your-rank" id="yourRank">Level 1 · Rank #?</div>
+        </div>
+
+        <!-- DAILY REWARDS PANEL -->
+        <div id="panelDaily" class="tab-panel">
+          <div class="tap-header">📅 DAILY REWARDS</div>
+          <div class="streak-counter">
+            <span class="streak-flame">🔥</span>
+            <span class="streak-days">Day <span id="currentStreak">0</span></span>
+          </div>
+          <div class="daily-grid" id="dailyGrid">
+            <!-- filled by js -->
+          </div>
+          <button class="claim-daily-btn" id="claimDailyBtn">CLAIM REWARD</button>
+          <div class="next-reset" id="nextReset">Next reset in: --:--:--</div>
+          <div class="weekly-bonus">
+            <h3>🎁 WEEKLY BONUS</h3>
+            <p>Claim all 7 days for MEGA reward!</p>
+            <div class="bonus-progress">
+              <div class="bonus-bar" id="bonusBar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WEEKLY CHALLENGES PANEL -->
+        <div id="panelChallenges" class="tab-panel">
+          <div class="tap-header">🎯 WEEKLY CHALLENGES</div>
+          <div class="challenges-list" id="challengesList">
+            <!-- filled by js -->
+          </div>
+          <div class="challenge-reset">Resets in 7 days</div>
+        </div>
+
+        <!-- ACHIEVEMENTS PANEL -->
+        <div id="panelAchievements" class="tab-panel">
+          <div class="tap-header">🏆 ACHIEVEMENTS</div>
+          <div class="achievement-stats">
+            <span>Completed: <span id="achievementCount">0</span>/<span id="totalAchievements">8</span></span>
+          </div>
+          <div class="achievements-grid" id="achievementsGrid">
+            <!-- filled by js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- bottom navigation (9 panels now) -->
+      <div class="bottom-nav">
+        <div class="nav-item active" data-tab="fox"><span>🦊</span><span>Fox</span></div>
+        <div class="nav-item" data-tab="ponds"><span>🎣</span><span>Ponds</span></div>
+        <div class="nav-item" data-tab="shop"><span>🛒</span><span>Shop</span></div>
+        <div class="nav-item" data-tab="prestige"><span>🌟</span><span>Lives</span></div>
+        <div class="nav-item" data-tab="cashout"><span>💰</span><span>Cashout</span></div>
+        <div class="nav-item" data-tab="daily"><span>📅</span><span>Daily</span></div>
+        <div class="nav-item" data-tab="challenges"><span>🎯</span><span>Weekly</span></div>
+        <div class="nav-item" data-tab="achievements"><span>🏆</span><span>Achieve</span></div>
+        <div class="nav-item" data-tab="leaderboard"><span>🏆</span><span>Top</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main script will be loaded from script.js -->
+  <script src="script.js"></script>
+</body>
+</html>
