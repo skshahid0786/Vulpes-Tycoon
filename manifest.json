@@ -1,7 +1,7 @@
 {
-  "name": "Cat Kombat - Nine Lives",
-  "short_name": "Cat Kombat",
-  "description": "Auto-mining cat game with prestige system",
+  "name": "Vulpes Tycoon",
+  "short_name": "VulpesTycoon",
+  "description": "Auto-mining fox game with prestige system",
   "start_url": "https://skshahid0786.github.io/Vulpes-Tycoon/",
   "display": "standalone",
   "background_color": "#1a1e2c",
